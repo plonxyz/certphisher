@@ -10,7 +10,13 @@ from selenium.webdriver.chrome.options import Options
 import time
 
 app = Flask(__name__)
-app.config["MONGO_URI"] = "mongodb://localhost:27017/certphisher"
+
+# MongoDB configuration - use environment variable or default to Docker service name
+mongo_host = os.environ.get('MONGODB_HOST', 'localhost')
+mongo_port = os.environ.get('MONGODB_PORT', '27017')
+mongo_db = os.environ.get('MONGODB_DB', 'certphisher')
+app.config["MONGO_URI"] = f"mongodb://{mongo_host}:{mongo_port}/{mongo_db}"
+
 app.config['SECRET_KEY'] = 'your-secret-key-change-this'
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
