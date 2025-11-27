@@ -4,6 +4,7 @@
 FROM python:3.11-slim AS base
 
 # Install system dependencies including Chrome for Selenium
+# Plus build tools and libraries for Python packages (OpenCV, Pillow, etc.)
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
@@ -11,6 +12,18 @@ RUN apt-get update && apt-get install -y \
     curl \
     chromium \
     chromium-driver \
+    gcc \
+    g++ \
+    make \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    libffi-dev \
+    libjpeg-dev \
+    zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Set Chrome/Chromium environment variables
