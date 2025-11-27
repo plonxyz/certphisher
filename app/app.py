@@ -158,10 +158,28 @@ def capture_screenshot(brand_id):
         chrome_options.add_argument('--headless')
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument('--window-size=1920,1080')
+        chrome_options.add_argument('--disable-software-rasterizer')
+
+        # Set chromium binary location (for Docker)
+        chrome_binary = os.environ.get('CHROME_BIN', '/usr/bin/chromium')
+        if os.path.exists(chrome_binary):
+            chrome_options.binary_location = chrome_binary
+        elif os.path.exists('/usr/bin/chromium-browser'):
+            chrome_options.binary_location = '/usr/bin/chromium-browser'
 
         try:
-            driver = webdriver.Chrome(options=chrome_options)
+            # Try to use chromedriver from environment or standard locations
+            chromedriver_path = os.environ.get('CHROMEDRIVER_PATH')
+            if chromedriver_path and os.path.exists(chromedriver_path):
+                from selenium.webdriver.chrome.service import Service
+                service = Service(executable_path=chromedriver_path)
+                driver = webdriver.Chrome(service=service, options=chrome_options)
+            else:
+                # Let Selenium find the driver automatically
+                driver = webdriver.Chrome(options=chrome_options)
+
             driver.get(brand['reference_url'])
             time.sleep(3)  # Wait for page to load
 
@@ -183,7 +201,12 @@ def capture_screenshot(brand_id):
             )
             flash('Screenshot captured successfully!', 'success')
         except Exception as e:
-            flash(f'Error capturing screenshot: {str(e)}. Make sure Chrome/Chromium is installed.', 'danger')
+            error_msg = str(e)
+            # Provide helpful error message
+            if 'chrome' in error_msg.lower() or 'driver' in error_msg.lower():
+                flash(f'Chrome/Chromium not available in this environment. Screenshot feature requires Chrome. Error: {error_msg}', 'warning')
+            else:
+                flash(f'Error capturing screenshot: {error_msg}', 'danger')
 
     except Exception as e:
         flash(f'Error: {str(e)}', 'danger')

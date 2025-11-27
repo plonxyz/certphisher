@@ -39,17 +39,50 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Layer 5: Chromium (optional - for screenshot capture)
-# Use fallback if chromium package names differ
+# Layer 5: Chromium for Selenium (optional - for screenshot capture)
+# Install from Debian repos with proper driver setup
 RUN apt-get update && \
-    (apt-get install -y --no-install-recommends chromium chromium-driver || \
-     apt-get install -y --no-install-recommends chromium-browser chromium-chromedriver || \
-     echo "Warning: Chromium not installed - screenshot capture will not work") && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y --no-install-recommends \
+        chromium \
+        chromium-driver \
+        fonts-liberation \
+        libasound2 \
+        libatk-bridge2.0-0 \
+        libatk1.0-0 \
+        libatspi2.0-0 \
+        libcups2 \
+        libdbus-1-3 \
+        libdrm2 \
+        libgbm1 \
+        libgtk-3-0 \
+        libnspr4 \
+        libnss3 \
+        libwayland-client0 \
+        libxcomposite1 \
+        libxdamage1 \
+        libxfixes3 \
+        libxkbcommon0 \
+        libxrandr2 \
+        xdg-utils \
+    && rm -rf /var/lib/apt/lists/* \
+    || echo "Warning: Chromium packages not available - screenshot feature will be disabled"
 
-# Set Chromium environment variables (try multiple possible locations)
+# Set Chromium environment variables for Selenium
 ENV CHROME_BIN=/usr/bin/chromium
 ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver
+
+# Create symlinks for different chromium names
+RUN if [ -f /usr/bin/chromium ]; then \
+        ln -sf /usr/bin/chromium /usr/bin/chromium-browser || true; \
+        ln -sf /usr/bin/chromium /usr/bin/google-chrome || true; \
+    elif [ -f /usr/bin/chromium-browser ]; then \
+        ln -sf /usr/bin/chromium-browser /usr/bin/chromium || true; \
+        export CHROME_BIN=/usr/bin/chromium-browser; \
+    fi
+
+# Verify chromium installation (optional, for debugging)
+RUN (chromium --version || chromium-browser --version || echo "Chromium not installed") && \
+    (chromedriver --version || echo "ChromeDriver not installed")
 
 WORKDIR /app
 
